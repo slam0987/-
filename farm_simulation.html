@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لعبة محاكاة المزرعة ثلاثية الأبعاد</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 20px;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+    }
+    #health-bar {
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      width: 200px;
+      height: 20px;
+      background-color: red;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <p>عدد المحاصيل: <span id="cropCount">0</span></p>
+    <p>عدد الحيوانات: <span id="animalCount">1</span></p>
+    <p>المال: <span id="money">0</span></p>
+  </div>
+  <div id="health-bar"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <script>
+    // إعداد المشهد والكاميرا والمُعالج
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // إضافة الإضاءة
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(10, 10, 10).normalize();
+    scene.add(light);
+
+    // إعداد خلفية السماء
+    const skyTexture = new THREE.TextureLoader().load('path/to/sky_texture.jpg');
+    scene.background = skyTexture;
+
+    // إعداد كاميرا العرض
+    camera.position.z = 20;
+    camera.position.y = 10;
+
+    // تحميل نماذج ثلاثية الأبعاد
+    const loader = new THREE.GLTFLoader();
+
+    let playerModel;
+    loader.load('path/to/farmer_model.glb', function (gltf) {
+      playerModel = gltf.scene;
+      playerModel.position.set(0, 0, 0);
+      playerModel.scale.set(1, 1, 1); 
+      scene.add(playerModel);
+    });
+
+    let cowModel;
+    loader.load('path/to/cow_model.glb', function (gltf) {
+      cowModel = gltf.scene;
+      cowModel.position.set(5, 0, -5);
+      cowModel.scale.set(0.5, 0.5, 0.5);
+      scene.add(cowModel);
+    });
+
+    // نظام المحاصيل
+    let crops = [];
+    function createCropField(x, z) {
+      const cropFieldGeometry = new THREE.PlaneGeometry(5, 5);
+      const cropFieldMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+      const cropField = new THREE.Mesh(cropFieldGeometry, cropFieldMaterial);
+      cropField.rotation.x = -Math.PI / 2;
+      cropField.position.set(x, 0, z);
+      cropField.isCropField = true;
+      scene.add(cropField);
+      return cropField;
+    }
+
+    createCropField(10, 10);
+    createCropField(-10, 10);
+
+    function plantCrop(field) {
+      const cropGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+      const cropMaterial = new THREE.MeshPhongMaterial({ color: 0x32CD32 });
+      const crop = new THREE.Mesh(cropGeometry, cropMaterial);
+      crop.position.set(field.position.x, 0.5, field.position.z);
+      scene.add(crop);
+      crops.push(crop);
+    }
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === ' ') {
+        const closestField = getClosestCropField(playerModel.position);
+        if (closestField && !closestField.isPlanted) {
+          plantCrop(closestField);
+          closestField.isPlanted = true;
+        }
+      }
+    });
+
+    function getClosestCropField(position) {
+      let closestField = null;
+      let minDistance = Infinity;
+      scene.children.forEach((object) => {
+        if (object.isCropField) {
+          const distance = position.distanceTo(object.position);
+          if (distance < minDistance) {
+            closestField = object;
+            minDistance = distance;
+          }
+        }
+      });
+      return closestField;
+    }
+
+    // نظام بيع المحاصيل
+    let playerMoney = 0;
+
+    function sellCrop() {
+      if (crops.length > 0) {
+        crops.pop(); // إزالة محصول
+        playerMoney += 10; // إضافة مال مقابل المحصول
+        document.getElementById('money').innerText = playerMoney;
+      }
+    }
+
+    // شريط الصحة
+    let playerHealth = 100;
+
+    function updateHealthBar() {
+      document.getElementById('health-bar').style.width = `${playerHealth}%`;
+      if (playerHealth <= 0) {
+        // نهاية اللعبة
+      }
+    }
+
+    // حركة اللاعب
+    const controls = { forward: false, backward: false, left: false, right: false };
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'w') controls.forward = true;
+      if (event.key === 's') controls.backward = true;
+      if (event.key === 'a') controls.left = true;
+      if (event.key === 'd') controls.right = true;
+    });
+
+    window.addEventListener('keyup', (event) => {
+      if (event.key === 'w') controls.forward = false;
+      if (event.key === 's') controls.backward = false;
+      if (event.key === 'a') controls.left = false;
+      if (event.key === 'd') controls.right = false;
+    });
+
+    function updatePlayer() {
+      if (controls.forward) playerModel.position.z -= 0.1;
+      if (controls.backward) playerModel.position.z += 0.1;
+      if (controls.left) playerModel.position.x -= 0.1;
+      if (controls.right) playerModel.position.x += 0.1;
+    }
+
+    // تحريك البقرة
+    function moveAnimal(animalModel) {
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      animalModel.position.x += direction * 0.02;
+    }
+
+    // إضافة المطر
+    const rainGeometry = new THREE.BufferGeometry();
+    const rainCount = 5000;
+    const positions = new Float32Array(rainCount * 3);
+
+    for (let i = 0; i < rainCount; i++) {
+      positions[i * 3] = Math.random() * 400 - 200;
+      positions[i * 3 + 1] = Math.random() * 500;
+      positions[i * 3 + 2] = Math.random() * 400 - 200;
+    }
+
+    rainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const rainMaterial = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.1 });
+    const rain = new THREE.Points(rainGeometry, rainMaterial);
+    scene.add(rain);
+
+    function animateRain() {
+      rain.position.y -= 0.2;
+      if (rain.position.y < 0) {
+        rain.position.y = 500;
+      }
+    }
+
+    // تأثيرات صوتية
+    const listener = new THREE.AudioListener();
+    camera.add(listener);
+
+    const sound = new THREE.Audio(listener);
+    const audioLoader = new THREE.AudioLoader();
+
+    audioLoader.load('path/to/rain_sound.mp3', function(buffer) {
+      sound.setBuffer(buffer);
+      sound.setLoop(true);
+      sound.setVolume(0.5);
+      sound.play();
+    });
+
+    // واجهة المستخدم
+    function updateUI() {
+      document.getElementById('cropCount').innerText = crops.length;
+      document.getElementById('animalCount').innerText = 1;
+    }
+
+    setInterval(updateUI, 1000);
+
+    // تحريك الكاميرا
+    function updateCamera() {
+      camera.position.x = playerModel.position.x + 10;
+      camera.position.z = playerModel.position.z + 10;
+      camera.lookAt(playerModel.position);
+    }
+
+    // الحركة المستمرة
+    function animate() {
+      requestAnimationFrame(animate);
+      updatePlayer();
+      updateCamera();
+      animateRain();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
