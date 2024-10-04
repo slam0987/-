@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تابع وابدأ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000000;
+        }
+        .container {
+            text-align: center;
+            background-color: #1C1C1C;
+            padding: 30px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            color: white;
+        }
+        button {
+            background-color: #EE1D52;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #FF2C55;
+        }
+        h1, h2 {
+            color: #25F4EE;
+        }
+    </style>
+</head>
+<body dir="rtl">
+    <div class="container">
+        <h1>تابع هذا الحساب</h1>
+        <button id="followBtn" onclick="followAccount()">تابع هذا الحساب</button>
+        
+        <h2 id="step2" style="display: none;">ابدأ الرشق</h2>
+        <button id="startBtn" style="display: none;" onclick="window.open('https://instaavm.com/tiktok-ucretsiz-takipci/', '_blank')">ابدأ الرشق</button>
+    </div>
+
+    <script>
+        function followAccount() {
+            // فتح صفحة الحساب في تيك توك
+            window.open('https://www.tiktok.com/@j4_um7?_t=8qGXQHzO8KW&_r=1', '_blank');
+            
+            // إخفاء زر "تابع هذا الحساب"
+            document.getElementById('followBtn').style.display = 'none';
+        }
+
+        // تُظهر زر "ابدأ الرشق" عند العودة إلى التطبيق بعد الذهاب إلى تيك توك
+        function showStartButton() {
+            document.getElementById('step2').style.display = 'block';
+            document.getElementById('startBtn').style.display = 'block';
+        }
+
+        // عند فتح الرابط، استمع لحدث العودة إلى التطبيق
+        window.addEventListener('focus', showStartButton);
+    </script>
+</body>
+</html>
