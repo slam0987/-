@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Auto-Liker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>TikTok Auto-Liker</h1>
+    <label for="videoUrl">Enter TikTok Video URL:</label>
+    <input type="text" id="videoUrl" placeholder="Enter the TikTok video URL here" size="50">
+    <br>
+    <button onclick="sendUrl()">Like Video</button>
+
+    <p id="status"></p>
+
+    <script>
+        function sendUrl() {
+            const videoUrl = document.getElementById('videoUrl').value;
+            if (videoUrl) {
+                document.getElementById('status').innerText = "Processing...";
+                fetch('http://localhost:5000/like-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: videoUrl }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.message;
+                })
+                .catch(error => {
+                    document.getElementById('status').innerText = "Error: " + error.message;
+                });
+            } else {
+                alert("Please enter a video URL!");
+            }
+        }
+    </script>
+
+</body>
+</html>
